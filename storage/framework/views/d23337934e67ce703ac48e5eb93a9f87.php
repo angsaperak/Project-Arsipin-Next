@@ -1,0 +1,1 @@
+<?php /**PATH E:\New folder\Materi untag\INTERN\cobainiarsip\archivy-main (3)\archivy-main\resources\views/errors/403.blade.php ENDPATH**/ ?>

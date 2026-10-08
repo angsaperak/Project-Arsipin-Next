@@ -1,0 +1,450 @@
+<?php if (isset($component)) { $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54 = $attributes; } ?>
+<?php $component = App\View\Components\AppLayout::resolve([] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('app-layout'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\App\View\Components\AppLayout::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Page Header -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <div class="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-folder-tree text-white text-xl"></i>
+                    </div>
+                    <div>
+                        <h2 class="font-bold text-2xl text-gray-900">Arsip Induk (Per Masalah)</h2>
+                        <p class="text-sm text-gray-600 mt-1">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            Kelola arsip induk untuk manajemen arsip terkait per masalah
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <!-- Info Fitur Button -->
+                    <button type="button" onclick="showFeatureInfo()"
+                        class="inline-flex items-center px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors">
+                        <i class="fas fa-question-circle mr-2"></i>
+                        Info Fitur
+                    </button>
+                    <?php if($showAddButton): ?>
+                        <a href="<?php echo e(route('admin.archives.create')); ?>"
+                            class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                            <i class="fas fa-plus mr-2"></i>Tambah Arsip Baru
+                        </a>
+                    <?php endif; ?>
+                    <a href="<?php echo e(route('admin.archives.index')); ?>"
+                        class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+                        <i class="fas fa-arrow-left mr-2"></i>Kembali ke Semua Arsip
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="bg-white shadow-sm border-b">
+        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+            <form method="GET" action="<?php echo e(route('admin.archives.parent')); ?>" class="space-y-4">
+                <!-- Search Row -->
+                <div class="flex gap-4">
+                    <div class="flex-1">
+                        <div class="relative">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <i class="fas fa-search text-gray-400"></i>
+                            </div>
+                            <input type="text" name="search" value="<?php echo e(request('search')); ?>"
+                                class="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Cari arsip induk berdasarkan deskripsi, nomor arsip, lampiran, kategori, atau klasifikasi...">
+                        </div>
+                    </div>
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                        <i class="fas fa-search mr-2"></i>Cari
+                    </button>
+                    <?php if(request('search') || request('category_filter')): ?>
+                        <a href="<?php echo e(route('admin.archives.parent')); ?>"
+                            class="inline-flex items-center px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors">
+                            <i class="fas fa-times mr-2"></i>Reset
+                        </a>
+                    <?php endif; ?>
+                </div>
+
+                <!-- Collapsible Categories Info -->
+                <div class="flex gap-4 items-center">
+                    <label class="text-sm font-medium text-gray-700">Kategori:</label>
+                    <div class="text-sm text-gray-600">Klik kategori di tabel untuk membuka/menutup arsip</div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="p-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <!-- Table Header -->
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        Daftar Arsip Induk (<?php echo e($archives->total()); ?> arsip)
+                    </h3>
+                    <div class="text-sm text-gray-500">Menampilkan arsip induk yang dapat dikelola arsip terkaitnya
+                    </div>
+                </div>
+            </div>
+
+            <!-- Collapsible Categories Table -->
+            <div class="overflow-x-auto">
+                <?php
+                    $categories = \App\Models\Category::orderBy('id')->get();
+                    $archivesByCategory = $archives->groupBy('category.nama_kategori');
+                ?>
+
+                <?php $__currentLoopData = $categories; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $category): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php
+                        $categoryArchives = $archivesByCategory->get($category->nama_kategori, collect());
+                        if (request('search') && $categoryArchives->count() == 0) {
+                            continue;
+                        }
+                        $categoryColors = [
+                            'UMUM' => 'bg-blue-100 text-blue-800 border-blue-200',
+                            'PEMERINTAHAN' => 'bg-orange-100 text-orange-800 border-orange-200',
+                            'POLITIK' => 'bg-purple-100 text-purple-800 border-purple-200',
+                            'NON KEUANGAN' => 'bg-green-100 text-green-800 border-green-200',
+                            'KEAMANAN DAN KETERTIBAN' => 'bg-pink-100 text-pink-800 border-pink-200',
+                            'KESEJAHTERAAN RAKYAT' => 'bg-teal-100 text-teal-800 border-teal-200',
+                            'PEREKONOMIAN' => 'bg-amber-100 text-amber-800 border-amber-200',
+                            'PEKERJAAN UMUM DAN KETENAGAAN' => 'bg-indigo-100 text-indigo-800 border-indigo-200',
+                            'PENGAWASAN' => 'bg-red-100 text-red-800 border-red-200',
+                            'KEPEGAWAIAN' => 'bg-cyan-100 text-cyan-800 border-cyan-200',
+                            'KEUANGAN' => 'bg-emerald-100 text-emerald-800 border-emerald-200',
+                            'LAINNYA' => 'bg-violet-100 text-violet-800 border-violet-200',
+                            'NON KEPEGAWAIAN & NON KEUANGAN' => 'bg-rose-100 text-rose-800 border-rose-200',
+                            'NON KEPEGAWAIAN' => 'bg-sky-100 text-sky-800 border-sky-200',
+                            'NON KEUANGAN' => 'bg-lime-100 text-lime-800 border-lime-200',
+                        ];
+                        $categoryColor =
+                            $categoryColors[$category->nama_kategori] ?? 'bg-blue-100 text-blue-800 border-blue-200';
+                    ?>
+
+                    <div class="mb-6 border border-gray-200 rounded-lg overflow-hidden">
+                        <!-- Category Header -->
+                        <div class="bg-gray-50 px-6 py-3 border-b border-gray-200">
+                            <button onclick="toggleCategory('<?php echo e($category->nama_kategori); ?>')"
+                                class="flex items-center justify-between w-full text-left hover:bg-gray-100 transition-colors">
+                                <div class="flex items-center space-x-3">
+                                    <i class="fas fa-chevron-down transform transition-transform duration-200"
+                                        id="icon-<?php echo e($category->nama_kategori); ?>"></i>
+                                    <span
+                                        class="px-3 py-1 text-sm font-semibold rounded-full border <?php echo e($categoryColor); ?>">
+                                        <?php echo e($category->nama_kategori); ?>
+
+                                    </span>
+                                    <span class="text-sm text-gray-600">(<?php echo e($categoryArchives->count()); ?> arsip)</span>
+                                </div>
+                                <i class="fas fa-chevron-down transform transition-transform duration-200"
+                                    id="icon-<?php echo e($category->nama_kategori); ?>-2"></i>
+                            </button>
+                        </div>
+
+                        <!-- Category Content -->
+                        <div id="content-<?php echo e($category->nama_kategori); ?>" class="bg-white" style="display: none;">
+                            <?php if($categoryArchives->count() > 0): ?>
+                                <table class="min-w-full divide-y divide-gray-200">
+                                    <thead class="bg-gray-50">
+                                        <tr>
+                                            <th
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                No</th>
+                                            <th
+                                                class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Nomor Arsip</th>
+                                            <th
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Indeks - Deskripsi</th>
+                                            <th
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Tahun</th>
+                                            <th
+                                                class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="bg-white divide-y divide-gray-200">
+                                        <?php $__currentLoopData = $categoryArchives; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $archive): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <tr class="hover:bg-gray-50">
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    <?php echo e($index + 1); ?></td>
+                                                <td class="px-4 py-2 truncate whitespace-nowrap text-sm text-gray-900">
+                                                    <span class="font-medium"><?php echo e($archive->index_number); ?></span>
+                                                </td>
+                                                <td class="px-6 py-4 truncate text-sm text-gray-900">
+                                                    <div class="max-w-xs truncate">
+                                                        <div class="font-medium text-gray-900">
+                                                            <?php echo e($archive->lampiran_surat); ?> -
+                                                            <?php echo e($archive->description); ?>
+
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                    <?php echo e($archive->kurun_waktu_start ? $archive->kurun_waktu_start->format('Y') : '-'); ?>
+
+                                                </td>
+                                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                    <div class="flex items-center space-x-2">
+                                                        <a href="<?php echo e(route('admin.archives.related', $archive)); ?>"
+                                                            class="text-blue-600 hover:text-blue-900"
+                                                            title="Lihat Arsip Terkait">
+                                                            <i class="fas fa-link"></i>
+                                                        </a>
+                                                        <a href="<?php echo e(route('admin.archives.create-related', $archive)); ?>"
+                                                            class="text-green-600 hover:text-green-900"
+                                                            title="Tambah Berkas Arsip yang Sama">
+                                                            <i class="fas fa-plus-circle"></i>
+                                                        </a>
+                                                        <button
+                                                            onclick="confirmDeleteArchive(<?php echo e($archive->id); ?>, '<?php echo e($archive->index_number); ?>', '<?php echo e($archive->description); ?>')"
+                                                            class="text-red-600 hover:text-red-900" title="Hapus Arsip">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </tbody>
+                                </table>
+                            <?php else: ?>
+                                <div class="p-6 text-center text-gray-500">
+                                    <i class="fas fa-folder-open text-2xl text-gray-300 mb-2"></i>
+                                    <p class="text-sm">Tidak ada arsip dalam kategori ini</p>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+                <?php if($archives->count() == 0): ?>
+                    <div class="text-center py-8">
+                        <i class="fas fa-folder-open text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-lg font-medium text-gray-900 mb-2">Tidak ada arsip induk</p>
+                        <p class="text-sm text-gray-500">
+                            <?php if(request('search')): ?>
+                                Tidak ada arsip induk yang sesuai dengan pencarian "<?php echo e(request('search')); ?>"
+                            <?php else: ?>
+                                Belum ada arsip induk yang dibuat
+                            <?php endif; ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Pagination -->
+            <?php if($archives->hasPages()): ?>
+                <div class="px-6 py-4 border-t border-gray-200">
+                    <?php echo e($archives->appends(request()->query())->links()); ?>
+
+                </div>
+            <?php endif; ?>
+        </div>
+    </div>
+
+    <script>
+        function confirmDeleteArchive(archiveId, archiveNumber, archiveDescription) {
+            Swal.fire({
+                title: 'Konfirmasi Hapus Arsip',
+                html: `
+                    <div class="text-left">
+                        <p class="mb-2"><strong>Nomor Arsip:</strong> ${archiveNumber}</p>
+                        <p class="mb-2"><strong>Deskripsi:</strong> ${archiveDescription}</p>
+                        <p class="text-red-600 text-sm mt-3">
+                            <i class="fas fa-exclamation-triangle mr-1"></i>
+                            Arsip ini akan dihapus secara permanen dan tidak dapat dikembalikan.
+                        </p>
+                    </div>
+                `,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Ya, Hapus!',
+                cancelButtonText: 'Batal',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = `/admin/archives/${archiveId}`;
+
+                    const csrfToken = document.createElement('input');
+                    csrfToken.type = 'hidden';
+                    csrfToken.name = '_token';
+                    csrfToken.value = '<?php echo e(csrf_token()); ?>';
+
+                    const methodField = document.createElement('input');
+                    methodField.type = 'hidden';
+                    methodField.name = '_method';
+                    methodField.value = 'DELETE';
+
+                    form.appendChild(csrfToken);
+                    form.appendChild(methodField);
+                    document.body.appendChild(form);
+                    form.submit();
+                }
+            });
+        }
+
+        function toggleCategory(categoryName) {
+            const content = document.getElementById(`content-${categoryName}`);
+            const icon1 = document.getElementById(`icon-${categoryName}`);
+            const icon2 = document.getElementById(`icon-${categoryName}-2`);
+
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                icon1.style.transform = 'rotate(0deg)';
+                icon2.style.transform = 'rotate(0deg)';
+            } else {
+                content.style.display = 'none';
+                icon1.style.transform = 'rotate(-90deg)';
+                icon2.style.transform = 'rotate(-90deg)';
+            }
+        }
+
+        function showFeatureInfo() {
+            const html = `
+                <div class="text-left space-y-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-blue-800 mb-2 flex items-center">
+                            <i class="fas fa-search mr-2"></i>
+                            Fitur Pencarian
+                        </h4>
+                        <ul class="list-disc ml-5 text-sm text-blue-700 space-y-1">
+                            <li><strong>Kata Kunci:</strong> Cari berdasarkan deskripsi, nomor arsip, lampiran, kategori, atau klasifikasi</li>
+                            <li><strong>Tombol Cari:</strong> Klik tombol "Cari" atau tekan Enter untuk melakukan pencarian</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-green-800 mb-2 flex items-center">
+                            <i class="fas fa-folder-tree mr-2"></i>
+                            Fitur Kategori
+                        </h4>
+                        <ul class="list-disc ml-5 text-sm text-green-700 space-y-1">
+                            <li><strong>Klik Kategori:</strong> Klik nama kategori untuk membuka/menutup daftar arsip</li>
+                            <li><strong>Collapsible:</strong> Setiap kategori bisa dibuka/tutup secara independen</li>
+                            <li><strong>Arsip Terkelompok:</strong> Arsip dikelompokkan berdasarkan kategori untuk kemudahan navigasi</li>
+                            <li><strong>Icon Indikator:</strong> Icon panah menunjukkan status buka/tutup kategori</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-yellow-800 mb-2 flex items-center">
+                            <i class="fas fa-cogs mr-2"></i>
+                            Tombol Aksi pada Arsip
+                        </h4>
+                        <ul class="list-disc ml-5 text-sm text-yellow-700 space-y-1">
+                            <li><strong>🔗 Lihat Arsip Terkait:</strong> Klik untuk melihat daftar arsip yang terkait dengan masalah yang sama</li>
+                            <li><strong>➕ Tambah Arsip Terkait:</strong> Klik untuk menambah arsip baru yang terkait dengan masalah yang sama</li>
+                            <li><strong>🗑️ Hapus Arsip:</strong> Klik untuk menghapus arsip induk</li>
+                        </ul>
+                    </div>
+
+                    <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                        <h4 class="font-semibold text-purple-800 mb-2 flex items-center">
+                            <i class="fas fa-lightbulb mr-2"></i>
+                            Tips Penggunaan
+                        </h4>
+                        <ul class="list-disc ml-5 text-sm text-purple-700 space-y-1">
+                            <li>Gunakan fitur pencarian untuk menemukan arsip spesifik dengan cepat</li>
+                            <li>Kelompokkan arsip berdasarkan kategori untuk manajemen yang lebih terorganisir</li>
+                            <li>Pastikan konfirmasi sebelum menghapus arsip karena tidak dapat dikembalikan</li>
+                            <li>Gunakan fitur "Tambah Arsip Terkait" untuk arsip dengan masalah yang sama</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+
+            Swal.fire({
+                title: 'Panduan Fitur: Arsip Induk (Per Masalah)',
+                html: html,
+                width: '700px',
+                confirmButtonText: 'Saya Mengerti',
+                confirmButtonColor: '#3b82f6',
+                showCloseButton: true,
+                customClass: {
+                    container: 'swal2-custom-container',
+                    popup: 'swal2-custom-popup'
+                }
+            });
+        }
+
+        <?php if(session('success')): ?>
+            Swal.fire({
+                title: 'Berhasil!',
+                text: '<?php echo e(session('success')); ?>',
+                icon: 'success',
+                confirmButtonText: 'OK',
+                timer: 3000,
+                timerProgressBar: true,
+                showConfirmButton: false
+            });
+        <?php endif; ?>
+
+        <?php if(session('create_success')): ?>
+            setTimeout(function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil!',
+                    text: '<?php echo e(session('create_success')); ?>',
+                    showDenyButton: true,
+                    showCancelButton: false,
+                    confirmButtonText: 'Set Lokasi',
+                    denyButtonText: 'Buat Arsip Terkait',
+                    confirmButtonColor: '#10b981',
+                    denyButtonColor: '#3b82f6',
+                    reverseButtons: true,
+                    customClass: {
+                        confirmButton: 'swal2-confirm rounded-xl px-6 py-3 text-white font-medium transition-all duration-200 hover:scale-105',
+                        denyButton: 'swal2-deny rounded-xl px-6 py-3 text-white font-medium transition-all duration-200 hover:scale-105'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href =
+                            '<?php echo e(route('admin.storage.create', session('new_archive_id'))); ?>';
+                    } else if (result.isDenied) {
+                        window.location.href =
+                            '<?php echo e(route('admin.archives.create-related', session('new_archive_id'))); ?>';
+                    }
+                });
+            }, 500);
+        <?php endif; ?>
+
+        <?php if(session('error')): ?>
+            Swal.fire({
+                title: 'Error!',
+                text: '<?php echo e(session('error')); ?>',
+                icon: 'error',
+                confirmButtonText: 'OK',
+                timer: 5000,
+                timerProgressBar: true
+            });
+        <?php endif; ?>
+    </script>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $attributes = $__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__attributesOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54)): ?>
+<?php $component = $__componentOriginal9ac128a9029c0e4701924bd2d73d7f54; ?>
+<?php unset($__componentOriginal9ac128a9029c0e4701924bd2d73d7f54); ?>
+<?php endif; ?>
+<?php /**PATH E:\New folder\Materi untag\INTERN\cobainiarsip\archivy-main (3)\archivy-main\resources\views/admin/archives/parent-archives.blade.php ENDPATH**/ ?>
